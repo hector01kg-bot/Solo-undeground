@@ -1,0 +1,102 @@
+﻿<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Assistant | SOLO UNDERGROUND</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./style.css?v=2026.02.27.5" />
+</head>
+<body>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="logo" data-nav-link="index.html" href="#">SOLO UNDERGROUND</a>
+    <div class="header-actions">
+      <div class="search-wrap">
+        <input class="search-input" type="search" data-search-input data-i18n-placeholder-ru="Поиск по платформе" data-i18n-placeholder-en="Search platform" placeholder="Поиск по платформе" />
+        <div class="search-results" data-search-results></div>
+      </div>
+      <button class="btn" data-theme-toggle></button>
+      <button class="btn" data-lang-toggle>ENG / RUS</button>
+      <div class="menu-wrap">
+        <button class="btn menu-button" data-menu-toggle>
+          <span data-lang="ru">☰ Меню</span>
+          <span data-lang="en">☰ Menu</span>
+        </button>
+        <div class="dropdown-menu" data-menu-panel>
+          <a class="dropdown-link" data-nav-link="knowledge-base.html" href="#"><span data-lang="ru">Психология</span><span data-lang="en">Psychology</span></a>
+          <a class="dropdown-link" data-nav-link="dark-knowledge-base.html" href="#"><span data-lang="ru">Темная психология</span><span data-lang="en">Dark Psychology</span></a>
+          <a class="dropdown-link" data-nav-link="ai-chat.html" data-ai-assistant-link="1" href="#"><span data-lang="ru">ИИ-помощник</span><span data-lang="en">AI Assistant</span></a>
+          <a class="dropdown-link" data-nav-link="sections/cognitive-biases/index.html" href="#"><span data-lang="ru">Когнитивные искажения</span><span data-lang="en">Cognitive Biases</span></a>
+          <a class="dropdown-link" data-nav-link="sections/decisions/index.html" href="#"><span data-lang="ru">Принятие решений</span><span data-lang="en">Decision Making</span></a>
+          <a class="dropdown-link" data-nav-link="sections/social/index.html" href="#"><span data-lang="ru">Социальная психология</span><span data-lang="en">Social Psychology</span></a>
+          <a class="dropdown-link" data-nav-link="sections/self-dev/index.html" href="#"><span data-lang="ru">Саморазвитие</span><span data-lang="en">Self Development</span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="container ai-chat-wrap">
+  <h1 data-lang="ru">ИИ-помощник по психологии</h1>
+  <h1 data-lang="en">Psychology AI Assistant</h1>
+  <p class="meta" data-lang="ru">Новый чат удаляет текущий диалог.</p>
+  <p class="meta" data-lang="en">Starting a new chat erases current dialogue.</p>
+
+  <section class="chat-shell">
+    <div class="chat-topbar">
+      <div>
+        <h2 class="chat-title" data-lang="ru">Чат-консультант</h2>
+        <h2 class="chat-title" data-lang="en">Assistant Chat</h2>
+        <p class="chat-note" data-lang="ru">Диалог временный. Для нового вопроса можно начать новый чат.</p>
+        <p class="chat-note" data-lang="en">This dialogue is temporary. Start a new chat for a fresh session.</p>
+      </div>
+      <div class="chat-actions">
+        <button class="btn" type="button" data-ai-new>
+          <span data-lang="ru">Новый чат</span>
+          <span data-lang="en">New Chat</span>
+        </button>
+        <button class="btn" type="button" data-ai-clear>
+          <span data-lang="ru">Очистить историю</span>
+          <span data-lang="en">Clear History</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="chat-log" data-ai-log></div>
+    <div class="chat-typing" data-ai-typing>ИИ печатает...</div>
+
+    <form class="chat-input-row" data-ai-form>
+      <input class="chat-input" type="text" data-ai-input data-i18n-placeholder-ru="Напишите вопрос по психологии..." data-i18n-placeholder-en="Type your psychology question..." placeholder="Напишите вопрос по психологии..." autocomplete="off" />
+      <button class="btn" type="submit">
+        <span data-lang="ru">Отправить</span>
+        <span data-lang="en">Send</span>
+      </button>
+    </form>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-links">
+      <a data-nav-link="index.html" href="#"><span data-lang="ru">Главная</span><span data-lang="en">Home</span></a>
+      <a data-nav-link="knowledge-base.html" href="#"><span data-lang="ru">Психология</span><span data-lang="en">Psychology</span></a>
+      <a data-nav-link="dark-knowledge-base.html" href="#"><span data-lang="ru">Темная психология</span><span data-lang="en">Dark Psychology</span></a>
+      <a data-nav-link="ai-chat.html" href="#"><span data-lang="ru">ИИ-помощник</span><span data-lang="en">AI Assistant</span></a>
+    </div>
+  </div>
+</footer>
+
+<script src="./search.js?v=2026.02.27.5"></script>
+<script src="./script.js?v=2026.02.27.5"></script>
+<script src="./ai-responses.js?v=2026.02.27.5"></script>
+<script src="./ai-chat.js?v=2026.02.27.5"></script>
+</body>
+</html>
+
+
+
+
+
