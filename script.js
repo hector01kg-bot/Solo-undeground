@@ -1,7 +1,6 @@
 ﻿(function () {
   const APP_VERSION = '2026.02.27.5';
   const STORAGE_KEY = 'soloUndergroundState';
-  const NAV_NOTICE_KEY = 'soloNavigationNotice';
   const defaultState = {
     theme: 'light',
     lang: 'ru',
@@ -81,25 +80,6 @@
     return new URL(safePath, PROJECT_ROOT_URL).toString();
   }
 
-  function setNavigationNotice(message) {
-    try {
-      localStorage.setItem(NAV_NOTICE_KEY, message);
-    } catch (e) {
-      // ignore storage failures
-    }
-  }
-
-  function showNavigationNotice() {
-    try {
-      const message = localStorage.getItem(NAV_NOTICE_KEY);
-      if (!message) return;
-      localStorage.removeItem(NAV_NOTICE_KEY);
-      window.alert(message);
-    } catch (e) {
-      // ignore storage failures
-    }
-  }
-
   function ensurePsychEffectsMenuLink() {
     document.querySelectorAll('[data-menu-panel]').forEach(function (panel) {
       const existing = panel.querySelector('[data-nav-link="psychological-effects.html"]');
@@ -156,24 +136,6 @@
     } catch (e) {
       return url;
     }
-  }
-
-  function applyNavLinks() {
-    document.querySelectorAll('[data-nav-link]').forEach(function (link) {
-      const path = link.getAttribute('data-nav-link') || '';
-      link.setAttribute('href', addVersion(resolveProjectUrl(path)));
-    });
-  }
-
-  function versionizePlainLinks() {
-    document.querySelectorAll('a[href]').forEach(function (link) {
-      if (link.hasAttribute('data-nav-link')) return;
-      const href = link.getAttribute('href');
-      if (!href) return;
-      if (/^(https?:|mailto:|tel:|javascript:|#)/i.test(href)) return;
-      if (!/\.html(\?|#|$)/i.test(href)) return;
-      link.setAttribute('href', addVersion(href));
-    });
   }
 
   function replaceLegacyEncyclopediaLinks() {
@@ -462,72 +424,13 @@
     });
   }
 
-  function initPageTransitions() {
-    requestAnimationFrame(function () {
-      document.body.classList.add('page-ready');
-      document.body.classList.remove('page-leaving');
-    });
-
-    window.addEventListener('pageshow', function () {
-      document.body.classList.remove('page-leaving');
-      document.body.classList.add('page-ready');
-    });
-
-    async function targetExists(url) {
-      try {
-        const response = await fetch(url.toString(), { method: 'HEAD', cache: 'no-store' });
-        if (response.status === 405 || response.status === 501) return true;
-        return response.ok;
-      } catch (err) {
-        console.warn('[solo] navigation check skipped', err);
-        return true;
-      }
-    }
-
-    async function navigateWithFallback(url) {
-      document.body.classList.add('page-leaving');
-      try {
-        const exists = await targetExists(url);
-        if (!exists) throw new Error('TARGET_NOT_FOUND');
-        location.href = url.href;
-      } catch (err) {
-        console.error('[solo] navigation fallback', { target: url.href, error: err });
-        setNavigationNotice('Страница не найдена. Вы были перенаправлены на главную страницу.');
-        location.href = addVersion(resolveProjectUrl('index.html')) + '#not-found';
-      }
-    }
-
-    document.addEventListener('click', function (e) {
-      const link = e.target.closest('a[href]');
-      if (!link) return;
-
-      const href = link.getAttribute('href');
-      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
-      if (link.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-
-      let url;
-      try {
-        url = new URL(link.href, location.href);
-      } catch (err) {
-        console.error('[solo] invalid link URL', { href: link.href, error: err });
-        return;
-      }
-      if (url.origin !== location.origin) return;
-      if (!url.pathname.endsWith('.html')) return;
-      if (url.href === location.href) return;
-
-      e.preventDefault();
-      navigateWithFallback(url);
-    });
-  }
-
   document.addEventListener('DOMContentLoaded', function () {
-    showNavigationNotice();
     console.log('[solo] init', {
       page: location.pathname,
       baseURI: document.baseURI,
       projectRoot: PROJECT_ROOT_URL
     });
+
     function safeRun(name, fn) {
       try {
         fn();
@@ -540,8 +443,6 @@
     safeRun('ensureAiAssistantMenuLink', ensureAiAssistantMenuLink);
     safeRun('ensureCoursesMenuLink', ensureCoursesMenuLink);
     safeRun('replaceLegacyEncyclopediaLinks', replaceLegacyEncyclopediaLinks);
-    safeRun('applyNavLinks', applyNavLinks);
-    safeRun('versionizePlainLinks', versionizePlainLinks);
     safeRun('initThemeAndLang', initThemeAndLang);
     safeRun('renderCounters', renderCounters);
     safeRun('initArticleButtons', initArticleButtons);
@@ -550,16 +451,5 @@
     safeRun('initSimulator', initSimulator);
     safeRun('initMenu', initMenu);
     safeRun('initReveal', initReveal);
-    safeRun('initPageTransitions', initPageTransitions);
   });
 })();
-
-
-
-
-
-
-
-
-
-
