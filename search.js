@@ -188,8 +188,16 @@
 
   const PROJECT_ROOT_URL = getProjectRootUrl();
 
+  function normalizeProjectPath(path) {
+    const safe = (path || '').replace(/^\/+/, '');
+    if (safe === 'sections/dark-psychology/index.html') {
+      return 'dark-knowledge-base.html';
+    }
+    return safe;
+  }
+
   function resolveUrl(url) {
-    const safe = (url || '').replace(/^\/+/, '');
+    const safe = normalizeProjectPath(url);
     return addVersion(new URL(safe, PROJECT_ROOT_URL).toString());
   }
 

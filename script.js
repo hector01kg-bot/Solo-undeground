@@ -1,6 +1,7 @@
 ﻿(function () {
   const APP_VERSION = '2026.02.27.5';
   const STORAGE_KEY = 'soloUndergroundState';
+  const NAV_NOTICE_KEY = 'soloNavigationNotice';
   const defaultState = {
     theme: 'light',
     lang: 'ru',
@@ -53,6 +54,14 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
   }
 
+  function normalizeProjectPath(path) {
+    const safePath = (path || '').replace(/^\/+/, '');
+    if (safePath === 'sections/dark-psychology/index.html') {
+      return 'dark-knowledge-base.html';
+    }
+    return safePath;
+  }
+
   function getProjectRootUrl() {
     const match = Array.from(document.querySelectorAll('script[src]')).find(function (s) {
       const src = s.getAttribute('src') || '';
@@ -68,8 +77,27 @@
   const PROJECT_ROOT_URL = getProjectRootUrl();
 
   function resolveProjectUrl(path) {
-    const safePath = (path || '').replace(/^\/+/, '');
+    const safePath = normalizeProjectPath(path);
     return new URL(safePath, PROJECT_ROOT_URL).toString();
+  }
+
+  function setNavigationNotice(message) {
+    try {
+      localStorage.setItem(NAV_NOTICE_KEY, message);
+    } catch (e) {
+      // ignore storage failures
+    }
+  }
+
+  function showNavigationNotice() {
+    try {
+      const message = localStorage.getItem(NAV_NOTICE_KEY);
+      if (!message) return;
+      localStorage.removeItem(NAV_NOTICE_KEY);
+      window.alert(message);
+    } catch (e) {
+      // ignore storage failures
+    }
   }
 
   function ensurePsychEffectsMenuLink() {
@@ -437,7 +465,37 @@
   function initPageTransitions() {
     requestAnimationFrame(function () {
       document.body.classList.add('page-ready');
+      document.body.classList.remove('page-leaving');
     });
+
+    window.addEventListener('pageshow', function () {
+      document.body.classList.remove('page-leaving');
+      document.body.classList.add('page-ready');
+    });
+
+    async function targetExists(url) {
+      try {
+        const response = await fetch(url.toString(), { method: 'HEAD', cache: 'no-store' });
+        if (response.status === 405 || response.status === 501) return true;
+        return response.ok;
+      } catch (err) {
+        console.warn('[solo] navigation check skipped', err);
+        return true;
+      }
+    }
+
+    async function navigateWithFallback(url) {
+      document.body.classList.add('page-leaving');
+      try {
+        const exists = await targetExists(url);
+        if (!exists) throw new Error('TARGET_NOT_FOUND');
+        location.href = url.href;
+      } catch (err) {
+        console.error('[solo] navigation fallback', { target: url.href, error: err });
+        setNavigationNotice('Страница не найдена. Вы были перенаправлены на главную страницу.');
+        location.href = addVersion(resolveProjectUrl('index.html')) + '#not-found';
+      }
+    }
 
     document.addEventListener('click', function (e) {
       const link = e.target.closest('a[href]');
@@ -447,40 +505,52 @@
       if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
       if (link.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
 
-      const url = new URL(link.href, location.href);
+      let url;
+      try {
+        url = new URL(link.href, location.href);
+      } catch (err) {
+        console.error('[solo] invalid link URL', { href: link.href, error: err });
+        return;
+      }
       if (url.origin !== location.origin) return;
       if (!url.pathname.endsWith('.html')) return;
       if (url.href === location.href) return;
 
       e.preventDefault();
-      document.body.classList.add('page-leaving');
-      setTimeout(function () {
-        location.href = url.href;
-      }, 180);
+      navigateWithFallback(url);
     });
   }
 
   document.addEventListener('DOMContentLoaded', function () {
+    showNavigationNotice();
     console.log('[solo] init', {
       page: location.pathname,
       baseURI: document.baseURI,
       projectRoot: PROJECT_ROOT_URL
     });
-    ensurePsychEffectsMenuLink();
-    ensureAiAssistantMenuLink();
-    ensureCoursesMenuLink();
-    replaceLegacyEncyclopediaLinks();
-    applyNavLinks();
-    versionizePlainLinks();
-    initThemeAndLang();
-    renderCounters();
-    initArticleButtons();
-    initQuiz();
-    initBiasMap();
-    initSimulator();
-    initMenu();
-    initReveal();
-    initPageTransitions();
+    function safeRun(name, fn) {
+      try {
+        fn();
+      } catch (err) {
+        console.error('[solo] init step failed: ' + name, err);
+      }
+    }
+
+    safeRun('ensurePsychEffectsMenuLink', ensurePsychEffectsMenuLink);
+    safeRun('ensureAiAssistantMenuLink', ensureAiAssistantMenuLink);
+    safeRun('ensureCoursesMenuLink', ensureCoursesMenuLink);
+    safeRun('replaceLegacyEncyclopediaLinks', replaceLegacyEncyclopediaLinks);
+    safeRun('applyNavLinks', applyNavLinks);
+    safeRun('versionizePlainLinks', versionizePlainLinks);
+    safeRun('initThemeAndLang', initThemeAndLang);
+    safeRun('renderCounters', renderCounters);
+    safeRun('initArticleButtons', initArticleButtons);
+    safeRun('initQuiz', initQuiz);
+    safeRun('initBiasMap', initBiasMap);
+    safeRun('initSimulator', initSimulator);
+    safeRun('initMenu', initMenu);
+    safeRun('initReveal', initReveal);
+    safeRun('initPageTransitions', initPageTransitions);
   });
 })();
 
