@@ -74,7 +74,7 @@
       const link = document.createElement('a');
       link.className = 'dropdown-link';
       link.setAttribute('data-nav-link', 'psychological-effects.html');
-      link.setAttribute('href', '#');
+      link.setAttribute('href', 'psychological-effects.html');
       link.innerHTML = '<span data-lang="ru">Психологические эффекты</span><span data-lang="en">Psychological Effects</span>';
       panel.appendChild(link);
     });
@@ -88,7 +88,7 @@
       const link = document.createElement('a');
       link.className = 'dropdown-link';
       link.setAttribute('data-nav-link', 'courses.html');
-      link.setAttribute('href', '#');
+      link.setAttribute('href', 'courses.html');
       link.innerHTML = '<span data-lang="ru">Курсы</span><span data-lang="en">Courses</span>';
       panel.appendChild(link);
     });
@@ -107,7 +107,7 @@
       link.className = 'dropdown-link ai-menu-link';
       link.setAttribute('data-nav-link', 'ai-chat.html');
       link.setAttribute('data-ai-assistant-link', '1');
-      link.setAttribute('href', '#');
+      link.setAttribute('href', 'ai-chat.html');
       link.innerHTML = '<span data-lang="ru">ИИ-помощник</span><span data-lang="en">AI Assistant</span>';
       panel.appendChild(link);
     });
@@ -133,7 +133,8 @@
     const prefix = getBasePrefix();
     document.querySelectorAll('[data-nav-link]').forEach(function (link) {
       const path = link.getAttribute('data-nav-link') || '';
-      link.setAttribute('href', addVersion(prefix + path));
+      const safePath = path.replace(/^\/+/, '');
+      link.setAttribute('href', addVersion(prefix + safePath));
     });
   }
 
@@ -479,6 +480,10 @@
     initPageTransitions();
   });
 })();
+
+
+
+
 
 
 
