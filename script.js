@@ -53,17 +53,23 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
   }
 
-  function getBasePrefix() {
-    const normalized = location.pathname.replace(/\\/g, '/');
-    const marker = '/solo-underground/';
-    const idx = normalized.toLowerCase().indexOf(marker);
-    if (idx !== -1) {
-      const relative = normalized.slice(idx + marker.length).split('/').filter(Boolean);
-      const depth = Math.max(relative.length - 1, 0);
-      return depth === 0 ? './' : '../'.repeat(depth);
+  function getProjectRootUrl() {
+    const match = Array.from(document.querySelectorAll('script[src]')).find(function (s) {
+      const src = s.getAttribute('src') || '';
+      return /(?:^|\/)script\.js(?:\?|$)/i.test(src);
+    });
+
+    if (match) {
+      return new URL('./', new URL(match.getAttribute('src'), document.baseURI)).toString();
     }
-    if (normalized.includes('/sections/') || normalized.includes('/encyclopedia/')) return '../../';
-    return './';
+    return new URL('./', document.baseURI).toString();
+  }
+
+  const PROJECT_ROOT_URL = getProjectRootUrl();
+
+  function resolveProjectUrl(path) {
+    const safePath = (path || '').replace(/^\/+/, '');
+    return new URL(safePath, PROJECT_ROOT_URL).toString();
   }
 
   function ensurePsychEffectsMenuLink() {
@@ -74,7 +80,7 @@
       const link = document.createElement('a');
       link.className = 'dropdown-link';
       link.setAttribute('data-nav-link', 'psychological-effects.html');
-      link.setAttribute('href', 'psychological-effects.html');
+      link.setAttribute('href', resolveProjectUrl('psychological-effects.html'));
       link.innerHTML = '<span data-lang="ru">Психологические эффекты</span><span data-lang="en">Psychological Effects</span>';
       panel.appendChild(link);
     });
@@ -88,7 +94,7 @@
       const link = document.createElement('a');
       link.className = 'dropdown-link';
       link.setAttribute('data-nav-link', 'courses.html');
-      link.setAttribute('href', 'courses.html');
+      link.setAttribute('href', resolveProjectUrl('courses.html'));
       link.innerHTML = '<span data-lang="ru">Курсы</span><span data-lang="en">Courses</span>';
       panel.appendChild(link);
     });
@@ -107,34 +113,27 @@
       link.className = 'dropdown-link ai-menu-link';
       link.setAttribute('data-nav-link', 'ai-chat.html');
       link.setAttribute('data-ai-assistant-link', '1');
-      link.setAttribute('href', 'ai-chat.html');
+      link.setAttribute('href', resolveProjectUrl('ai-chat.html'));
       link.innerHTML = '<span data-lang="ru">ИИ-помощник</span><span data-lang="en">AI Assistant</span>';
       panel.appendChild(link);
     });
   }
 
   function addVersion(url) {
-    if (!url || /^(https?:|mailto:|tel:|javascript:|#)/i.test(url)) return url;
-
-    const hashIndex = url.indexOf('#');
-    const hash = hashIndex >= 0 ? url.slice(hashIndex) : '';
-    const noHash = hashIndex >= 0 ? url.slice(0, hashIndex) : url;
-
-    const qIndex = noHash.indexOf('?');
-    const base = qIndex >= 0 ? noHash.slice(0, qIndex) : noHash;
-    const query = qIndex >= 0 ? noHash.slice(qIndex + 1).split('&').filter(Boolean) : [];
-    const filtered = query.filter(function (p) { return !/^v=/.test(p); });
-    filtered.push('v=' + APP_VERSION);
-
-    return base + '?' + filtered.join('&') + hash;
+    if (!url || /^(mailto:|tel:|javascript:|#)/i.test(url)) return url;
+    try {
+      const abs = new URL(url, document.baseURI);
+      abs.searchParams.set('v', APP_VERSION);
+      return abs.toString();
+    } catch (e) {
+      return url;
+    }
   }
 
   function applyNavLinks() {
-    const prefix = getBasePrefix();
     document.querySelectorAll('[data-nav-link]').forEach(function (link) {
       const path = link.getAttribute('data-nav-link') || '';
-      const safePath = path.replace(/^\/+/, '');
-      link.setAttribute('href', addVersion(prefix + safePath));
+      link.setAttribute('href', addVersion(resolveProjectUrl(path)));
     });
   }
 
@@ -150,8 +149,6 @@
   }
 
   function replaceLegacyEncyclopediaLinks() {
-    const prefix = getBasePrefix();
-
     document.querySelectorAll('[data-nav-link="encyclopedia/index.html"]').forEach(function (link) {
       link.setAttribute('data-nav-link', 'courses.html');
       if (link.querySelector('[data-lang="ru"]') && link.querySelector('[data-lang="en"]')) {
@@ -162,7 +159,7 @@
 
     document.querySelectorAll('a[href*="encyclopedia/index.html"]').forEach(function (link) {
       if (!link.hasAttribute('data-nav-link')) {
-        link.setAttribute('href', addVersion(prefix + 'courses.html'));
+        link.setAttribute('href', addVersion(resolveProjectUrl('courses.html')));
         if (link.querySelector('[data-lang="ru"]') && link.querySelector('[data-lang="en"]')) {
           link.querySelector('[data-lang="ru"]').textContent = 'Курсы';
           link.querySelector('[data-lang="en"]').textContent = 'Courses';
@@ -192,9 +189,10 @@
     const langToggle = document.querySelector('[data-lang-toggle]');
     if (langToggle) langToggle.textContent = 'ENG / RUS';
 
-    // Safety fallback: if nothing is visible for current language, force Russian.
-    const visible = document.querySelectorAll('[data-lang="' + safeLang + '"]:not(.hidden)');
-    if (!visible.length && safeLang !== 'ru') {
+    // Safety fallback: if content language is missing in <main>, force Russian.
+    const mainLangBlocks = document.querySelectorAll('main [data-lang]');
+    const visibleInMain = document.querySelectorAll('main [data-lang="' + safeLang + '"]:not(.hidden)');
+    if (mainLangBlocks.length && !visibleInMain.length && safeLang !== 'ru') {
       document.querySelectorAll('[data-lang]').forEach(function (el) {
         if (el.getAttribute('data-lang') === 'ru') el.classList.remove('hidden');
         else el.classList.add('hidden');
@@ -463,6 +461,11 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
+    console.log('[solo] init', {
+      page: location.pathname,
+      baseURI: document.baseURI,
+      projectRoot: PROJECT_ROOT_URL
+    });
     ensurePsychEffectsMenuLink();
     ensureAiAssistantMenuLink();
     ensureCoursesMenuLink();

@@ -174,35 +174,34 @@
     }
   }
 
-  function getBasePrefix() {
-    const normalized = location.pathname.replace(/\\/g, '/');
-    const marker = '/solo-underground/';
-    const idx = normalized.toLowerCase().indexOf(marker);
-    if (idx !== -1) {
-      const relative = normalized.slice(idx + marker.length).split('/').filter(Boolean);
-      const depth = Math.max(relative.length - 1, 0);
-      return depth === 0 ? './' : '../'.repeat(depth);
+  function getProjectRootUrl() {
+    const match = Array.from(document.querySelectorAll('script[src]')).find(function (s) {
+      const src = s.getAttribute('src') || '';
+      return /(?:^|\/)search\.js(?:\?|$)/i.test(src);
+    });
+
+    if (match) {
+      return new URL('./', new URL(match.getAttribute('src'), document.baseURI)).toString();
     }
-    if (normalized.includes('/sections/') || normalized.includes('/encyclopedia/')) return '../../';
-    return './';
+    return new URL('./', document.baseURI).toString();
   }
 
+  const PROJECT_ROOT_URL = getProjectRootUrl();
+
   function resolveUrl(url) {
-    const root = getBasePrefix();
-    return addVersion(root + url.replace(/^\//, ''));
+    const safe = (url || '').replace(/^\/+/, '');
+    return addVersion(new URL(safe, PROJECT_ROOT_URL).toString());
   }
 
   function addVersion(url) {
-    if (!url || /^(https?:|mailto:|tel:|javascript:|#)/i.test(url)) return url;
-    const hashIndex = url.indexOf('#');
-    const hash = hashIndex >= 0 ? url.slice(hashIndex) : '';
-    const noHash = hashIndex >= 0 ? url.slice(0, hashIndex) : url;
-    const qIndex = noHash.indexOf('?');
-    const base = qIndex >= 0 ? noHash.slice(0, qIndex) : noHash;
-    const query = qIndex >= 0 ? noHash.slice(qIndex + 1).split('&').filter(Boolean) : [];
-    const filtered = query.filter(function (p) { return !/^v=/.test(p); });
-    filtered.push('v=' + APP_VERSION);
-    return base + '?' + filtered.join('&') + hash;
+    if (!url || /^(mailto:|tel:|javascript:|#)/i.test(url)) return url;
+    try {
+      const abs = new URL(url, document.baseURI);
+      abs.searchParams.set('v', APP_VERSION);
+      return abs.toString();
+    } catch (e) {
+      return url;
+    }
   }
 
   function buildDynamicIndex(mapJson) {
@@ -247,13 +246,20 @@
     const results = document.querySelector('[data-search-results]');
     if (!input || !results) return;
 
-    fetch(resolveUrl('data/psychology-map.json'))
+    const mapUrl = resolveUrl('data/psychology-map.json');
+    console.log('[search] loading map', mapUrl);
+    fetch(mapUrl)
       .then(function (res) { return res.json(); })
       .then(function (data) {
         dynamicIndex = buildDynamicIndex(data);
+        console.log('[search] map loaded', {
+          sections: Array.isArray(data.sections) ? data.sections.length : 0,
+          indexedItems: dynamicIndex.length
+        });
       })
-      .catch(function () {
+      .catch(function (err) {
         dynamicIndex = [];
+        console.error('[search] map load failed', err);
       });
 
     input.addEventListener('input', function () {
